@@ -1,0 +1,73 @@
+---
+title: "Life Tables"
+author: "Hunter Ratliff, @HunterRatliff1"
+date: "February 25, 2016"
+output: html_document
+---
+
+[Link to data](https://docs.google.com/spreadsheets/d/1-isLIapf_YadmCGmv0LQ-2x9N-5iHPuQ_wg1wpl4LrY/pubhtml)
+
+Symbol   | Definition
+-------- | -------------
+$_na_x$  | Age interval
+$_nM_x$  | Period central death rate
+$_nq_x$  | Interval mortality probability
+$l_x$    | Survivorship (left alive)
+$_nL_x$  | Person-years lived in the interval
+$T_x$    | Person-years of remaining life in the cohort
+
+
+```{r, include=FALSE}
+require(dplyr)
+require(ggplot2)
+require(ggthemes)
+
+# require(googlesheets)
+# gs_title("Life Tables") %>% gs_read_csv("USA-2011") %>% write.csv("LifeTable_USA2011.csv")
+# gs_title("Life Tables") %>% gs_read_csv("TX-Total") %>% rio::export(file="LifeTable_TX.csv", format="csv") 
+
+# LT <- read.csv("LifeTable_USA2011.csv") %>% select(-X)
+LT <- read.csv("LifeTable_TX.csv")
+LT$Age.Group <- factor(LT$Age.Group, 
+                       levels = c("<1", "1-4", "5-9", "10-14", "15-19", "20-24", 
+                                  "25-29", "30-34", "35-39", "40-44", "45-49", 
+                                  "50-54", "55-59", "60-64", "65-69", "70-74", 
+                                  "75+"),
+                       ordered = T)
+```
+
+**Important Equations**   
+$l_{x+n} = l_x - _nd_x$   
+$T_{x+n} = T_x - _nL_x$   
+
+Symbol  | Equation          | Definition
+------- | ----------------- | -------------
+$e_x$   | $\frac{T_x}{l_x}$ | Life expectancy
+$_nd_x$ | $_nq_x * l_x$     | Proportion of deaths in the interval
+
+```{r, echo=FALSE}
+# qplot(data=LT, x=pr_Death, y=nLives, color=Sex, alpha=Age)
+LT$Sex2 <- 1
+LT$Sex2[LT$Sex=="Males"] <- -1
+```
+
+```{r, fig.align='center', fig.height=8}
+LT %>% ggplot(aes(x=Age.Group, y=Population*Sex2)) + 
+  geom_bar(aes(fill=Sex), stat="identity", position = "identity") + 
+  coord_flip() + scale_y_continuous(labels = scales::comma) + 
+  theme_fivethirtyeight() + scale_fill_fivethirtyeight() + 
+  facet_wrap("Race", ncol=1) 
+```
+
+Symbol  | Def
+--------|--------------------
+$_nq_x$ | Proportion dying
+$l_x$   | Number surviving
+$d_x$   | Number dying
+$_nL_x$ | Person-years lived
+$T_x$ | Person-years lived (before)
+
+```{r}
+LT %>%
+  ggplot(aes(x=Age.Group, y=qx)) + geom_bar(aes(alpha=Sex, fill=Race), stat="identity", position = "dodge")
+```
